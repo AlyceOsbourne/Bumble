@@ -1,10 +1,10 @@
 import bumble
-import standard_codecs
+import utils.standard_codecs
 import functools
 import operator
 
 class Pipeline:
-    def __init__(self, codec: standard_codecs.Codec = standard_codecs.Codecs.NULL):
+    def __init__(self, codec: utils.standard_codecs.Codec = utils.standard_codecs.Codecs.NULL):
         self.codec = codec
 
     def encode[T](self, data: T) -> bytes:
@@ -16,7 +16,7 @@ class Pipeline:
     @classmethod
     def of(cls, *item) -> 'Pipeline':
         return cls(functools.reduce(operator.or_, [
-            standard_codecs.Codecs[codec.upper()] if isinstance(codec, str) else codec
+            utils.standard_codecs.Codecs[codec.upper()] if isinstance(codec, str) else codec
             for codec
             in item
         ]))

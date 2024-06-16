@@ -1,3 +1,4 @@
+"""Everything contained in this module pertains to the codec itself."""
 import functools
 
 from bumble.codec import _encode, _decode

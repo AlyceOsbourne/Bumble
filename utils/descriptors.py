@@ -3,7 +3,7 @@ import pickletools
 from typing import Protocol, Callable, runtime_checkable
 
 from bumble import encode, decode
-from standard_codecs import Codec, Codecs
+from utils.standard_codecs import Codec, Codecs
 
 
 class Bumble:
@@ -14,10 +14,10 @@ class Bumble:
     def __get__(self, instance, owner):
         if instance is None:
             return self
-        return encode(instance.__dict__) >> self.codec
+        return self.codec.encode(encode(instance.__dict__))
 
     def __set__(self, instance, value):
-        instance.__dict__.update(decode(value << self.codec))
+        instance.__dict__.update(decode(self.codec.decode(value)))
 
     def __set_name__(self, owner, name):
         if not self.replace_pickle:

@@ -4,7 +4,7 @@ from typing import AnyStr, Protocol
 
 from cryptography.fernet import Fernet
 
-from standard_codecs import Codec
+from utils.standard_codecs import Codec
 
 import hmac
 

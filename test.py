@@ -9,9 +9,8 @@ from types import SimpleNamespace
 from typing import NamedTuple, TypedDict
 
 import bumble
-import pipeline
-import standard_codecs
-from descriptors import bumble as bumbled_class
+from utils import pipeline, standard_codecs
+from utils.descriptors import bumble as bumbled_class
 
 # Colors for test result output
 colours = {
