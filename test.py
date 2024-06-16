@@ -12,7 +12,6 @@ import bumble
 import pipeline
 import standard_codecs
 from descriptors import bumble as bumbled_class
-from collections import namedtuple, deque
 
 # Colors for test result output
 colours = {
@@ -38,12 +37,14 @@ TestIntEnum = enum.IntEnum("TestIntEnum", {"A": 1, "B": 2, "C": 3})
 TestIntFlag = enum.IntFlag("TestIntFlag", {"A": 1, "B": 2, "C": 4})
 TestStrEnum = enum.StrEnum("TestStrEnum", {"A": "a", "B": "b", "C": "c"})
 
+
 @bumbled_class()
 @dataclasses.dataclass(eq=True)
 class TestBumbledObject:
     a: int
     b: str
     c: float
+
 
 # Test cases
 test_cases = [
@@ -135,7 +136,7 @@ test_cases = [
     TestStrEnum.A,  # noqa
     TestStrEnum.B,  # noqa
     TestStrEnum.C,  # noqa,
-    
+
 ]
 
 
@@ -192,17 +193,17 @@ def test_patch():
 
 def main():
     test_encode_decode()
-    # test_pipeline()
-    # test_bumbled_class()
-    #
-    # for codec in standard_codecs.Codecs:
-    #     test_pipeline_of(codec)
-    #
-    # for i in range(2, 4):
-    #     test_combinations_of_pipelines(r=i)
-    #
-    # test_patch()
-    #
+    test_pipeline()
+    test_bumbled_class()
+
+    for codec in standard_codecs.Codecs:
+        test_pipeline_of(codec)
+
+    for i in range(2, 4):
+        test_combinations_of_pipelines(r=i)
+
+    test_patch()
+
     print(f"{colours['Passed']}All tests passed\033[0m")
 
 

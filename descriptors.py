@@ -50,10 +50,10 @@ class BumbleProtocol(Protocol):
 
 
 def bumble(
-        codec: Codec = Codecs.NULL,
         replace_pickle: bool = True  # you generally don't want to set this to False.
 ) -> Callable[[type], type[BumbleProtocol]]:
     def decorator(cls: type) -> type[BumbleProtocol]:
+        codec = getattr(cls, '__codec__', Codecs.NULL)
         setattr(cls, '__bumble__', Bumble(codec, replace_pickle))
         setattr(cls, '__pickle__', Pickle())
         return cls  # type: ignore

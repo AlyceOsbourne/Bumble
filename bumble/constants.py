@@ -1,0 +1,23 @@
+MODULE_MAPPING = {
+    "__main__": "?M",
+    "builtins": "?b",
+    "typing": "?t",
+    "types": "?T",
+    "math": "?m",
+    "collections": "?c",
+    "functools": "?f",
+    "enum": "?e",
+    "dataclasses": "?d",
+    "decimal": "?D",
+    "base64": "?B",
+    "binascii": "?a",
+    "importlib": "?i",
+    "hashlib": "?h",
+    "lzma": "?l",
+    "zlib": "?z",
+    "bz2": "?B",
+    "gzip": "?g",
+    "pickle": "?p",
+    "json": "?j",
+}
+REVERSE_MODULE_MAPPING = {v: k for k, v in MODULE_MAPPING.items()}

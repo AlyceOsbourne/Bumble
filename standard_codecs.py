@@ -25,9 +25,6 @@ class Codec:
             decode=lambda data: self.decode(other.decode(data))
         )  # type: ignore
 
-    __rshift__ = __rlshift__ = lambda self, other: self.decode(other)
-    __lshift__ = __rrshift__ = lambda self, other: self.encode(other)
-
 
 def hash_encode(data: bytes, algo):
     h = hashlib.new(algo)
