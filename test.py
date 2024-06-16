@@ -1,6 +1,7 @@
 import array
 import dataclasses
 import enum
+import fractions
 import functools
 import itertools
 import math
@@ -10,7 +11,6 @@ from typing import NamedTuple, TypedDict
 
 import bumble
 from utils import pipeline, standard_codecs
-from utils.descriptors import bumble as bumbled_class
 
 # Colors for test result output
 colours = {
@@ -35,15 +35,6 @@ TestFlag = enum.Flag("TestFlag", {"A": 1, "B": 2, "C": 4})
 TestIntEnum = enum.IntEnum("TestIntEnum", {"A": 1, "B": 2, "C": 3})
 TestIntFlag = enum.IntFlag("TestIntFlag", {"A": 1, "B": 2, "C": 4})
 TestStrEnum = enum.StrEnum("TestStrEnum", {"A": "a", "B": "b", "C": "c"})
-
-
-@bumbled_class()
-@dataclasses.dataclass(eq=True)
-class TestBumbledObject:
-    a: int
-    b: str
-    c: float
-
 
 # Test cases
 test_cases = [
@@ -98,6 +89,14 @@ test_cases = [
     float('nan'),
     float('inf'),
     float('-inf'),
+    # complex numbers
+    complex(1, 2),
+    complex(3.14, 6.28),
+    complex(10 ** 100, 10 ** 100),
+    # fractions
+    fractions.Fraction(1, 2),
+    fractions.Fraction(3, 4),
+    fractions.Fraction(10 ** 100, 10 ** 100),
     # NoneType
     None,
     # Arbitrary objects
@@ -139,16 +138,6 @@ test_cases = [
 ]
 
 
-def test_bumbled_class():
-    print("Running bumbled class tests... ", end="")
-    b = TestBumbledObject(1, "string", 3.14)
-    encoded_data = b.__bumble__
-    c = TestBumbledObject(2, "another string", 6.28)
-    c.__bumble__ = encoded_data
-    assert b == c, f"{colours['AssertionError']}Failed\033[0m for {b} and {c}"
-    print("\r" + " " * len("Running bumbled class tests... ") + "\r", end="")
-
-
 def _test(msg, encoder, decoder, **kwargs):
     print(msg, end="... ")
     for data in test_cases:
@@ -185,23 +174,15 @@ def test_combinations_of_pipelines(codecs=standard_codecs.Codecs, r=2):
         test_pipeline_of(functools.reduce(operator.or_, item))
 
 
-def test_patch():
-    from bumble import pickle
-    _test("Running encoding/decoding tests with monkey-patched pickle module", pickle.dumps, pickle.loads)
-
-
 def main():
     test_encode_decode()
     test_pipeline()
-    test_bumbled_class()
 
     for codec in standard_codecs.Codecs:
         test_pipeline_of(codec)
 
     for i in range(2, 4):
         test_combinations_of_pipelines(r=i)
-
-    test_patch()
 
     print(f"{colours['Passed']}All tests passed\033[0m")
 

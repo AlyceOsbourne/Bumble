@@ -1,10 +1,11 @@
 import bumble
+import utils.abstract_codec
 import utils.standard_codecs
 import functools
 import operator
 
 class Pipeline:
-    def __init__(self, codec: utils.standard_codecs.Codec = utils.standard_codecs.Codecs.NULL):
+    def __init__(self, codec: utils.abstract_codec.Codec = utils.standard_codecs.Codecs.NULL):
         self.codec = codec
 
     def encode[T](self, data: T) -> bytes:
@@ -20,3 +21,6 @@ class Pipeline:
             for codec
             in item
         ]))
+
+
+__all__ = ['Pipeline']

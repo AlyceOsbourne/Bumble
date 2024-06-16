@@ -4,7 +4,7 @@ from typing import AnyStr, Protocol
 
 from cryptography.fernet import Fernet
 
-from utils.standard_codecs import Codec
+from utils.abstract_codec import Codec
 
 import hmac
 
@@ -28,3 +28,4 @@ def HMACCodec(key: AnyStr) -> Codec:
     )
 
 
+__all__ = ['EncryptedCodec', 'HMACCodec']
