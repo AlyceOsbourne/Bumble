@@ -1,12 +1,13 @@
 import base64
 import hashlib
-from typing import AnyStr
+from typing import AnyStr, Protocol
 
 from cryptography.fernet import Fernet
 
 from standard_codecs import Codec
 
 import hmac
+
 
 def EncryptedCodec(key: AnyStr) -> Codec:
     if isinstance(key, str):
@@ -27,14 +28,3 @@ def HMACCodec(key: AnyStr) -> Codec:
     )
 
 
-class SecureCodec:
-    def __init__(self, codec: type[Codec]):
-        self.codec = codec
-
-    def __get__(self, instance, owner):
-        if instance is None:
-            return self
-        return self.codec(instance.key)
-
-    def __set__(self, instance, value):
-        instance.key = value
