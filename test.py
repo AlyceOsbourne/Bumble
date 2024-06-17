@@ -1,6 +1,5 @@
 import array
 import dataclasses
-import decimal
 import enum
 import fractions
 import functools
@@ -9,9 +8,9 @@ import math
 import operator
 from types import SimpleNamespace
 from typing import NamedTuple, TypedDict
-
+import traceback
 import bumble
-from utils import pipeline, standard_codecs
+from bumble.utils import pipeline, standard_codecs
 
 # Colors for test result output
 colours = {
@@ -146,13 +145,13 @@ def _test(msg, encoder, decoder, **kwargs):
             encoded_data = encoder(data, **kwargs)
         except Exception as e:
             print(f"{colours['Exception']}Exception\033[0m for {data} - {e}")
-            continue
+            raise
 
         try:
             decoded_data = decoder(encoded_data, **kwargs)
         except Exception as e:
             print(f"{colours['Exception']}Exception\033[0m for {data} - {e}")
-            continue
+            raise
 
         if isinstance(data, float) and (math.isnan(data) and math.isnan(decoded_data)):
             assert True
@@ -195,8 +194,8 @@ def main():
     for codec in standard_codecs.Codecs:
         test_pipeline_of(codec)
 
-    # for i in range(2, len(standard_codecs.Codecs) + 1): # this is a long test due to the sheer number of combinations
-    #     test_combinations_of_pipelines(r=i)
+    for i in range(2, len(standard_codecs.Codecs) + 1): # this is a long test due to the sheer number of combinations
+        test_combinations_of_pipelines(r=i)
 
     print(f"{colours['Passed']}All tests passed\033[0m")
 

@@ -1,10 +1,10 @@
-"""Everything contained in this module pertains to the codec itself."""
+"""
+.. include:: ../README.md
+"""
 import functools
 
 from bumble.codec import _encode, _decode
-from bumble.constants import MODULE_MAPPING, REVERSE_MODULE_MAPPING
-from bumble.exceptions import BumbleEncodeException, BumbleDecodeException
-from bumble.helpers import _initialize_collection, _finalize_collection
+from bumble.codec.exceptions import BumbleEncodeException, BumbleDecodeException
 
 
 def encode[T](data: T) -> bytes:

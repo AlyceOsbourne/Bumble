@@ -1,5 +1,3 @@
-# Bumble
-
 Not as bug-filled as the title might suggest, Bumble is a superset of bencoding (pronounced Bee Encoding) that aims to be a safer, simpler alternative to Pickle. Often when pickling objects, we only care about the types and data contained, not about recreating the same objects with the same IDs. This is where many of the unsafe aspects of Pickle come from. Bumble solves this by allowing the encoding of your data without needing to encode everything about the environment or objects like code objects.
 
 ## Why Bumble Rocks:

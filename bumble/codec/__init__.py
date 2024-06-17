@@ -1,14 +1,13 @@
 import array
-import base64
 import decimal
 import enum
 import importlib
 import math
-from typing import Any
 from collections import namedtuple
+from typing import Any
+
 from .constants import MODULE_MAPPING, REVERSE_MODULE_MAPPING
 from .exceptions import BumbleDecodeException
-from .helpers import _initialize_collection, _finalize_collection
 
 
 def _encode[T](data: T) -> bytes:
@@ -49,10 +48,7 @@ def _encode[T](data: T) -> bytes:
 
 def _encode_int(data: int) -> bytes:
     """Encode integer to bytes."""
-    length = data.bit_length()
-    if length < 8:
-        return f"i{data}e".encode()
-    return f"i{base64.b85encode(data.to_bytes((length + 7) // 8, signed=True)).decode()}e".encode()
+    return f"i{data}e".encode()
 
 
 def _encode_float(data: float) -> bytes:
@@ -93,7 +89,7 @@ def _encode_dict(data: dict) -> bytes:
     if not data:
         return b"D"
     return b"d" + b"".join(
-        _encode_bytes(key.encode('utf-8')) + _encode(value)
+        _encode(key) + _encode(value)
         for key, value in sorted(data.items())
     ) + b"e"
 
@@ -111,9 +107,11 @@ def _encode_tuple(data: tuple) -> bytes:
         return b"T"
     return b"t" + b"".join(_encode(item) for item in data) + b"e"
 
+
 def _encode_named_tuple(data: namedtuple) -> bytes:
     # we need to encode the name, and the fields like a dict
     return b"nt" + _encode_unicode(data.__class__.__name__) + _encode_dict(data._asdict()) + b"e"
+
 
 def _encode_array(data: array.array) -> bytes:
     """Encode array."""
@@ -185,11 +183,7 @@ def _decode_int(data: str, index: int, cast_func: type) -> tuple[int, int]:
     """Decode integer from string."""
     end_index = data.index('e', index)
     number_str = data[index + 1:end_index]
-    if number_str.isdigit():
-        number = cast_func(number_str)
-    else:
-        number = int.from_bytes(base64.b85decode(number_str.encode()), signed=True)
-    return number, end_index + 1
+    return int(number_str), end_index + 1
 
 
 def _decode_float(data: str, index: int) -> tuple[float, int]:
@@ -241,9 +235,9 @@ def _decode_collection(data: str, index: int, type_char: str) -> tuple[list | di
     result = _initialize_collection(type_char)
     while data[index] != 'e':
         if type_char == 'd':
-            key, index = _decode_bytes(data, index)
+            key, index = _decode(data, index)
             value, index = _decode(data, index)
-            result[key.decode()] = value
+            result[key] = value
         else:
             item, index = _decode(data, index)
             if type_char == 's':
@@ -301,3 +295,25 @@ def _decode_named_tuple(data: str, index: int) -> tuple[namedtuple, int]:
     name, index = _decode_unicode(data, index)
     fields, index = _decode(data, index)
     return namedtuple(name, fields.keys())(*fields.values()), index
+
+
+def _initialize_collection(type_char: str) -> list | dict | set | tuple:
+    """Initialize collection based on type character."""
+    match type_char:
+        case 'l' | 'L' | 't':
+            return []
+        case 'd' | 'D':
+            return {}
+        case 's' | 'S':
+            return set()
+        case 'T':
+            return ()
+        case _:
+            raise ValueError(f"Invalid collection type: {type_char}")
+
+
+def _finalize_collection(collection: list | dict | set | tuple, type_char: str) -> list | dict | set | tuple:
+    """Finalize collection based on type character."""
+    if type_char == 't':
+        return tuple(collection)
+    return collection
