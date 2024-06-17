@@ -4,14 +4,12 @@ import decimal
 import enum
 import importlib
 import math
-from typing import Any, Callable
-
+from typing import Any
+from collections import namedtuple
 from .constants import MODULE_MAPPING, REVERSE_MODULE_MAPPING
 from .exceptions import BumbleDecodeException
 from .helpers import _initialize_collection, _finalize_collection
 
-type EncodingFunc[T] = Callable[[T], bytes]
-type DecodingFunc[T] = Callable[[str, int], tuple[T, int]]
 
 def _encode[T](data: T) -> bytes:
     """Helper function for encoding Python object."""
@@ -21,7 +19,7 @@ def _encode[T](data: T) -> bytes:
         case array.array():
             return _encode_array(data)
         case bool():
-            return b"b1" if data else b"b0"
+            return b"+" if data else b"-"
         case complex():
             return _encode_complex(data)
         case int():
@@ -38,6 +36,9 @@ def _encode[T](data: T) -> bytes:
             return _encode_dict(data)
         case set():
             return _encode_set(data)
+        # named tuple
+        case tuple() if hasattr(data, '_fields'):
+            return _encode_named_tuple(data)
         case tuple():
             return _encode_tuple(data)
         case None:
@@ -45,12 +46,14 @@ def _encode[T](data: T) -> bytes:
         case _:
             return _encode_object(data)
 
+
 def _encode_int(data: int) -> bytes:
     """Encode integer to bytes."""
     length = data.bit_length()
     if length < 8:
         return f"i{data}e".encode()
     return f"i{base64.b85encode(data.to_bytes((length + 7) // 8, signed=True)).decode()}e".encode()
+
 
 def _encode_float(data: float) -> bytes:
     """Encode float to bytes."""
@@ -61,24 +64,29 @@ def _encode_float(data: float) -> bytes:
     else:
         return f"f{decimal.Decimal(str(data))}e".encode()
 
+
 def _encode_complex(data: complex) -> bytes:
     """Encode complex number to bytes."""
     return b"c" + _encode_float(data.real) + _encode_float(data.imag) + b"e"
 
+
 def _encode_bytes(data: bytes) -> bytes:
     """Encode bytes."""
     return f"{len(data)}:".encode() + data
+
 
 def _encode_unicode(data: str) -> bytes:
     """Encode Unicode string."""
     encoded_data = data.encode()
     return f"u{len(encoded_data)}:".encode() + encoded_data
 
+
 def _encode_list(data: list) -> bytes:
     """Encode list."""
     if not data:
         return b"L"
     return b"l" + b"".join(_encode(item) for item in data) + b"e"
+
 
 def _encode_dict(data: dict) -> bytes:
     """Encode dictionary."""
@@ -89,11 +97,13 @@ def _encode_dict(data: dict) -> bytes:
         for key, value in sorted(data.items())
     ) + b"e"
 
+
 def _encode_set(data: set) -> bytes:
     """Encode set."""
     if not data:
         return b"S"
     return b"s" + b"".join(_encode(item) for item in sorted(data)) + b"e"
+
 
 def _encode_tuple(data: tuple) -> bytes:
     """Encode tuple."""
@@ -101,9 +111,14 @@ def _encode_tuple(data: tuple) -> bytes:
         return b"T"
     return b"t" + b"".join(_encode(item) for item in data) + b"e"
 
+def _encode_named_tuple(data: namedtuple) -> bytes:
+    # we need to encode the name, and the fields like a dict
+    return b"nt" + _encode_unicode(data.__class__.__name__) + _encode_dict(data._asdict()) + b"e"
+
 def _encode_array(data: array.array) -> bytes:
     """Encode array."""
     return f"a{data.typecode}".encode() + _encode(data.tolist())
+
 
 def _encode_object(data: Any) -> bytes:
     """Encode arbitrary object."""
@@ -121,6 +136,7 @@ def _encode_object(data: Any) -> bytes:
     encoded_attributes = _encode_dict(attributes)
     return b"o" + _encode_unicode(import_path) + encoded_attributes
 
+
 def _encode_enum(data: enum.Enum) -> bytes:
     """Encode enum."""
     import_path = f"{data.__class__.__module__}.{data.__class__.__qualname__}"
@@ -130,33 +146,40 @@ def _encode_enum(data: enum.Enum) -> bytes:
             break
     return b"e" + _encode_unicode(import_path) + _encode_unicode(data.name)
 
+
 def _decode[T](data: str, index: int) -> tuple[T, int]:
     """Helper function for decoding string to Python object."""
-    match char := data[index]:
-        case 'b':
-            return _decode_bool(data, index)
-        case 'i':
-            return _decode_int(data, index, int)
-        case 'f':
-            return _decode_float(data, index)
-        case 'c':
-            return _decode_complex(data, index)
-        case 'u':
-            return _decode_unicode(data, index)
-        case _ if char.isdigit():
-            return _decode_bytes(data, index)
-        case 'l' | 'd' | 's' | 't' | 'L' | 'D' | 'S' | 'T':
-            return _decode_collection(data, index, char)
-        case 'o':
-            return _decode_object(data, index)
-        case 'n':
-            return None, index + 1
-        case 'a':
-            return _decode_array(data, index)
-        case 'e':
-            return _decode_enum(data, index)
-        case _:
-            raise BumbleDecodeException(f"Invalid encoded data at index {index}")
+
+    def starts_with(seq: str) -> bool:
+        return data[index:index + len(seq)] == seq
+
+    if data[index].isdigit():
+        return _decode_bytes(data, index)
+    elif starts_with('nt'):
+        return _decode_named_tuple(data, index)
+    elif starts_with('+') or starts_with('-'):
+        return data[index] == '+', index + 1
+    elif starts_with('i'):
+        return _decode_int(data, index, int)
+    elif starts_with('f'):
+        return _decode_float(data, index)
+    elif starts_with('c'):
+        return _decode_complex(data, index)
+    elif starts_with('u'):
+        return _decode_unicode(data, index)
+    elif any(starts_with(ch) for ch in ['l', 'd', 's', 't', 'L', 'D', 'S', 'T']):
+        return _decode_collection(data, index, data[index])
+    elif starts_with('o'):
+        return _decode_object(data, index)
+    elif starts_with('n'):
+        return None, index + 1
+    elif starts_with('a'):
+        return _decode_array(data, index)
+    elif starts_with('e'):
+        return _decode_enum(data, index)
+    else:
+        raise BumbleDecodeException(f"Invalid encoded data at index {index}")
+
 
 def _decode_int(data: str, index: int, cast_func: type) -> tuple[int, int]:
     """Decode integer from string."""
@@ -167,6 +190,7 @@ def _decode_int(data: str, index: int, cast_func: type) -> tuple[int, int]:
     else:
         number = int.from_bytes(base64.b85decode(number_str.encode()), signed=True)
     return number, end_index + 1
+
 
 def _decode_float(data: str, index: int) -> tuple[float, int]:
     """Decode float from string."""
@@ -182,11 +206,13 @@ def _decode_float(data: str, index: int) -> tuple[float, int]:
         number = float(decimal.Decimal(float_str))
     return number, end_index + 1
 
+
 def _decode_complex(data: str, index: int) -> tuple[complex, int]:
     """Decode complex number from string."""
     real, index = _decode_float(data, index + 1)
     imag, index = _decode_float(data, index)
     return complex(real, imag), index
+
 
 def _decode_bytes(data: str, index: int) -> tuple[bytes, int]:
     """Decode bytes from string."""
@@ -196,6 +222,7 @@ def _decode_bytes(data: str, index: int) -> tuple[bytes, int]:
     end = start + length
     return data[start:end].encode(), end
 
+
 def _decode_unicode(data: str, index: int) -> tuple[str, int]:
     """Decode Unicode string from data."""
     colon_index = data.index(':', index)
@@ -204,6 +231,7 @@ def _decode_unicode(data: str, index: int) -> tuple[str, int]:
     end = start + length
     decoded_str = data[start:end].encode().decode()
     return decoded_str, end
+
 
 def _decode_collection(data: str, index: int, type_char: str) -> tuple[list | dict | set | tuple, int]:
     """Decode collection (list, dict, set, tuple) from string."""
@@ -224,11 +252,13 @@ def _decode_collection(data: str, index: int, type_char: str) -> tuple[list | di
                 result.append(item)
     return _finalize_collection(result, type_char), index + 1
 
+
 def _decode_array(data: str, index: int) -> tuple[array.array, int]:
     """Decode array from string."""
     array_type = data[index + 1]
     array_data, index = _decode(data, index + 2)
     return array.array(array_type, array_data), index
+
 
 def _decode_object(data: str, index: int) -> tuple[Any, int]:
     """Decode arbitrary object from string."""
@@ -250,6 +280,7 @@ def _decode_object(data: str, index: int) -> tuple[Any, int]:
             setattr(obj, slot, value)
     return obj, index
 
+
 def _decode_enum(data: str, index: int) -> tuple[enum.Enum, int]:
     """Decode enum from string."""
     index += 1  # Skip the 'e' character
@@ -264,11 +295,9 @@ def _decode_enum(data: str, index: int) -> tuple[enum.Enum, int]:
     cls = getattr(module, class_name)
     return cls[name], index
 
-def _decode_bool(data: str, index: int) -> tuple[bool, int]:
-    """Decode boolean from string."""
-    if data[index:index + 2] == 'b1':
-        return True, index + 2
-    elif data[index:index + 2] == 'b0':
-        return False, index + 2
-    else:
-        raise BumbleDecodeException("Invalid boolean value")
+
+def _decode_named_tuple(data: str, index: int) -> tuple[namedtuple, int]:
+    index += 2  # Skip the 'nt' character
+    name, index = _decode_unicode(data, index)
+    fields, index = _decode(data, index)
+    return namedtuple(name, fields.keys())(*fields.values()), index

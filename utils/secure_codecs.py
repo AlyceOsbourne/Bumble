@@ -1,15 +1,14 @@
 import base64
 import hashlib
-from typing import AnyStr, Protocol
+import hmac
+from typing import AnyStr
 
 from cryptography.fernet import Fernet
 
 from utils.abstract_codec import Codec
 
-import hmac
 
-
-def EncryptedCodec(key: AnyStr) -> Codec:
+def fernet_codec(key: AnyStr) -> Codec:
     if isinstance(key, str):
         key = key.encode()
     key = base64.urlsafe_b64encode(hashlib.sha256(key).digest())
@@ -19,13 +18,16 @@ def EncryptedCodec(key: AnyStr) -> Codec:
         decode=cipher.decrypt
     )
 
-def HMACCodec(key: AnyStr) -> Codec:
+def hmac_codec(key: AnyStr) -> Codec:
     if isinstance(key, str):
         key = key.encode()
-    return Codec(
-        encode=lambda data: hmac.new(key, data, hashlib.sha256).digest() + data,
-        decode=lambda data: data[32:] if hmac.compare_digest(data[:32], hmac.new(key, data[32:], hashlib.sha256).digest()) else None
-    )
+    def encode(data: bytes) -> bytes:
+        return hmac.new(key, data, hashlib.sha256).digest() + data
+    def decode(data: bytes) -> bytes:
+        return data[32:] if hmac.compare_digest(data[:32], hmac.new(key, data[32:], hashlib.sha256).digest()) else None
+
+    return Codec(encode, decode)
 
 
-__all__ = ['EncryptedCodec', 'HMACCodec']
+
+__all__ = ['fernet_codec', 'hmac_codec']
