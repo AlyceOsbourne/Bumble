@@ -1,6 +1,7 @@
-class BumbleEncodeException(Exception):
-    """Raised when encoding fails."""
+"""Exceptions for Bumble codec."""
+import types
 
+BumbleEncodeException = types.new_class('BumbleEncodeException', (Exception,))
+BumbleDecodeException = types.new_class('BumbleDecodeException', (Exception,))
 
-class BumbleDecodeException(Exception):
-    """Raised when decoding fails."""
+__all__ = ['BumbleEncodeException', 'BumbleDecodeException']

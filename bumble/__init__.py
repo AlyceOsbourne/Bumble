@@ -1,19 +1,28 @@
 """
 .. include:: ../README.md
 """
-import functools
 
-from bumble.codec import _encode, _decode
+from bumble.codec import _encode, _decode  # noqa
 from bumble.codec.exceptions import BumbleEncodeException, BumbleDecodeException
+from bumble.utils.pipeline import Pipeline
+
+__version__ = "0.0.1"
+
+CONTROL_CHAR = "🐝".encode()  # used for verifying this is a bumble encoded object.
 
 
 def encode[T](data: T) -> bytes:
     """Encode Python object to bytes."""
-    return _encode(data)
+    return CONTROL_CHAR + _encode(data)
 
 
 def decode[T](data: bytes | str) -> T:
-    """Decode bytes or string to Python object."""
+    """Decode bytes to Python object."""
+    if not data:
+        raise BumbleDecodeException("Data must not be empty")
+    if not data.startswith(CONTROL_CHAR):
+        raise BumbleDecodeException("Invalid Data")
+    data = data[len(CONTROL_CHAR):]
     if isinstance(data, bytes):
         data = data.decode()
     if not isinstance(data, str):
@@ -21,3 +30,5 @@ def decode[T](data: bytes | str) -> T:
     result, _ = _decode(data, 0)
     return result
 
+
+__all__ = ['encode', 'decode', 'Pipeline', 'utils', 'codec']

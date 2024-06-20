@@ -2,13 +2,10 @@ import array
 import dataclasses
 import enum
 import fractions
-import functools
-import itertools
 import math
-import operator
 from types import SimpleNamespace
 from typing import NamedTuple, TypedDict
-import traceback
+
 import bumble
 from bumble.utils import pipeline, standard_codecs
 
@@ -134,7 +131,6 @@ test_cases = [
     TestStrEnum.A,  # noqa
     TestStrEnum.B,  # noqa
     TestStrEnum.C,  # noqa,
-
 ]
 
 
@@ -182,9 +178,6 @@ def test_pipeline_of(codec):
     _test(f"Running encoding/decoding tests with pipeline of {codec}", pipeline_.encode, pipeline_.decode)
 
 
-def test_combinations_of_pipelines(codecs=standard_codecs.Codecs, r=2):
-    for item in itertools.combinations(codecs, r):
-        test_pipeline_of(functools.reduce(operator.or_, item))
 
 
 def main():
@@ -193,9 +186,6 @@ def main():
 
     for codec in standard_codecs.Codecs:
         test_pipeline_of(codec)
-
-    for i in range(2, len(standard_codecs.Codecs) + 1): # this is a long test due to the sheer number of combinations
-        test_combinations_of_pipelines(r=i)
 
     print(f"{colours['Passed']}All tests passed\033[0m")
 

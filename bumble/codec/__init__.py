@@ -1,3 +1,4 @@
+"""The main bumble encoding and decoding functions."""
 import array
 import decimal
 import enum
@@ -35,7 +36,6 @@ def _encode[T](data: T) -> bytes:
             return _encode_dict(data)
         case set():
             return _encode_set(data)
-        # named tuple
         case tuple() if hasattr(data, '_fields'):
             return _encode_named_tuple(data)
         case tuple():
@@ -110,7 +110,7 @@ def _encode_tuple(data: tuple) -> bytes:
 
 def _encode_named_tuple(data: namedtuple) -> bytes:
     # we need to encode the name, and the fields like a dict
-    return b"nt" + _encode_unicode(data.__class__.__name__) + _encode_dict(data._asdict()) + b"e"
+    return b"nt" + _encode_unicode(data.__class__.__name__) + _encode_dict(data._asdict()) + b"e"  # noqa
 
 
 def _encode_array(data: array.array) -> bytes:
@@ -121,10 +121,7 @@ def _encode_array(data: array.array) -> bytes:
 def _encode_object(data: Any) -> bytes:
     """Encode arbitrary object."""
     import_path = f"{data.__class__.__module__}.{data.__class__.__qualname__}"
-    for module_name, short_code in MODULE_MAPPING.items():
-        if import_path.startswith(module_name):
-            import_path = import_path.replace(module_name, short_code, 1)
-            break
+    import_path = _encode_module_name(import_path)
     attributes = {}
     if hasattr(data, '__dict__'):
         attributes.update(data.__dict__)
@@ -135,13 +132,18 @@ def _encode_object(data: Any) -> bytes:
     return b"o" + _encode_unicode(import_path) + encoded_attributes
 
 
-def _encode_enum(data: enum.Enum) -> bytes:
-    """Encode enum."""
-    import_path = f"{data.__class__.__module__}.{data.__class__.__qualname__}"
+def _encode_module_name(import_path):
     for module_name, short_code in MODULE_MAPPING.items():
         if import_path.startswith(module_name):
             import_path = import_path.replace(module_name, short_code, 1)
             break
+    return import_path
+
+
+def _encode_enum(data: enum.Enum) -> bytes:
+    """Encode enum."""
+    import_path = f"{data.__class__.__module__}.{data.__class__.__qualname__}"
+    import_path = _encode_module_name(import_path)
     return b"e" + _encode_unicode(import_path) + _encode_unicode(data.name)
 
 
@@ -149,6 +151,7 @@ def _decode[T](data: str, index: int) -> tuple[T, int]:
     """Helper function for decoding string to Python object."""
 
     def starts_with(seq: str) -> bool:
+        """Check if data starts with a given sequence."""
         return data[index:index + len(seq)] == seq
 
     if data[index].isdigit():
@@ -158,7 +161,7 @@ def _decode[T](data: str, index: int) -> tuple[T, int]:
     elif starts_with('+') or starts_with('-'):
         return data[index] == '+', index + 1
     elif starts_with('i'):
-        return _decode_int(data, index, int)
+        return _decode_int(data, index)
     elif starts_with('f'):
         return _decode_float(data, index)
     elif starts_with('c'):
@@ -179,7 +182,7 @@ def _decode[T](data: str, index: int) -> tuple[T, int]:
         raise BumbleDecodeException(f"Invalid encoded data at index {index}")
 
 
-def _decode_int(data: str, index: int, cast_func: type) -> tuple[int, int]:
+def _decode_int(data: str, index: int) -> tuple[int, int]:
     """Decode integer from string."""
     end_index = data.index('e', index)
     number_str = data[index + 1:end_index]
@@ -258,10 +261,7 @@ def _decode_object(data: str, index: int) -> tuple[Any, int]:
     """Decode arbitrary object from string."""
     index += 1  # Skip the 'o' character
     import_path, index = _decode_unicode(data, index)
-    for short_code, module_name in REVERSE_MODULE_MAPPING.items():
-        if import_path.startswith(short_code):
-            import_path = import_path.replace(short_code, module_name, 1)
-            break
+    import_path = _decode_module_name(import_path)
     attributes, index = _decode_collection(data, index, 'd')
     module_name, class_name = import_path.rsplit('.', 1)
     module = importlib.import_module(module_name)
@@ -275,14 +275,19 @@ def _decode_object(data: str, index: int) -> tuple[Any, int]:
     return obj, index
 
 
-def _decode_enum(data: str, index: int) -> tuple[enum.Enum, int]:
-    """Decode enum from string."""
-    index += 1  # Skip the 'e' character
-    import_path, index = _decode_unicode(data, index)
+def _decode_module_name(import_path):
     for short_code, module_name in REVERSE_MODULE_MAPPING.items():
         if import_path.startswith(short_code):
             import_path = import_path.replace(short_code, module_name, 1)
             break
+    return import_path
+
+
+def _decode_enum(data: str, index: int) -> tuple[enum.Enum, int]:
+    """Decode enum from string."""
+    index += 1  # Skip the 'e' character
+    import_path, index = _decode_unicode(data, index)
+    import_path = _decode_module_name(import_path)
     name, index = _decode_unicode(data, index)
     module_name, class_name = import_path.rsplit('.', 1)
     module = importlib.import_module(module_name)

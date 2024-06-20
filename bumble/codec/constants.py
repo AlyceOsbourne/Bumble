@@ -1,23 +1,23 @@
-MODULE_MAPPING = {
-    "__main__": "?M",
-    "builtins": "?b",
-    "typing": "?t",
-    "types": "?T",
-    "math": "?m",
-    "collections": "?c",
-    "functools": "?f",
-    "enum": "?e",
-    "dataclasses": "?d",
-    "decimal": "?D",
-    "base64": "?B",
-    "binascii": "?a",
-    "importlib": "?i",
-    "hashlib": "?h",
-    "lzma": "?l",
-    "zlib": "?z",
-    "bz2": "?B",
-    "gzip": "?g",
-    "pickle": "?p",
-    "json": "?j",
-}
-REVERSE_MODULE_MAPPING = {v: k for k, v in MODULE_MAPPING.items()}
+"""Used to store things like module mappings etc."""
+import sys
+
+
+def map_names():
+    """Tokenizes the names of the built-in modules."""
+    # TODO: Check how this behaves across different versions of Python.
+    #  We may need to serialize pythons version, and use that to determine the module names.
+    names = sorted(list(sys.builtin_module_names))
+    symbols = {
+        '__main__': '?M',
+    }
+    for name in names:
+        idx = 0
+        symbol = f"?{name[idx]}"
+        while symbol in symbols.values():
+            idx += 1
+            symbol += name[idx]
+        symbols[name] = symbol
+    return symbols, {v: k for k, v in symbols.items()}
+
+
+MODULE_MAPPING, REVERSE_MODULE_MAPPING = map_names()

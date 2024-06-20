@@ -1,4 +1,6 @@
-"""Pipelines allow you to chain Bumbles codec with others with ease, allowing for you to create serialization pipelines."""
+"""Pipelines allow you to chain Bumbles codec with others with ease, allowing for you to create serialization
+pipelines."""
+import dataclasses
 
 import bumble
 from .abstract_codec import Codec
@@ -6,23 +8,18 @@ from .standard_codecs import Codecs
 import functools
 import operator
 
+
+@dataclasses.dataclass
 class Pipeline:
     """
-    The Pipeline class is used to create a serialization pipeline with Bumble's codec and other codecs.
+    The Pipeline class is used to create a serialization pipeline with Bumbles codec and other codecs.
     It accepts a codec and behaves just like codecs, but encodes/decodes to the bumble encoding first.
 
     Attributes:
         codec (Codec): The codec used in the pipeline. Default is Codecs.NULL.
     """
 
-    def __init__(self, codec: Codec = Codecs.NULL):
-        """
-        The constructor for Pipeline class.
-
-        Parameters:
-           codec (Codec): The codec used in the pipeline. Default is Codecs.NULL.
-        """
-        self.codec = codec
+    codec: Codec = Codecs.NULL
 
     def encode[T](self, data: T) -> bytes:
         """
@@ -64,5 +61,19 @@ class Pipeline:
             for codec
             in item
         ])) if item else cls()
+
+    def __or__[P:'Pipeline', C: 'Codec'](self, other: P | C | str) -> 'Pipeline':
+        """
+        Creates a new Pipeline instance with the given codecs.
+        """
+        if isinstance(other, Pipeline):
+            other = other.codec
+        elif isinstance(other, str):
+            other = bumble.utils.standard_codecs.Codecs[other.upper()]
+        return Pipeline(self.codec | other)
+
+    def __repr__(self) -> str:
+        return f"Pipeline({self.codec})"
+
 
 __all__ = ['Pipeline']

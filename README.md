@@ -85,10 +85,6 @@ assert data == decoded_data, "Data does not match"
 
 Bumble makes it straightforward to encode and decode data while ensuring safety and efficiency. This quick example shows how seamless the process can be, providing a safer alternative to Pickle with similar versatility. 
 
-## Incoming Features
-- Pipelines, to enable you to chain multiple codecs together, allowing for compression, hashing, encryption, etc.
-- Some Descriptor based tools to simplify swapping pickling for bumbling in your code.
-
 ### Note  
 Bumble is intentionally designed to not support all types in order to provide a safer and simpler alternative to Pickle. It focuses on the most common types and structures.  
 Bumble operates under the assumption that most users are pickling objects for their state, rather than requiring a true duplication of the object.
