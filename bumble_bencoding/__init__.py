@@ -2,9 +2,9 @@
 .. include:: ../README.md
 """
 
-from bumble.codec import _encode, _decode  # noqa
-from bumble.codec.exceptions import BumbleEncodeException, BumbleDecodeException
-from bumble.utils.pipeline import Pipeline
+from bumble_bencoding.codec import _encode, _decode  # noqa
+from bumble_bencoding.codec.exceptions import BumbleDecodeException
+from bumble_bencoding.utils.pipeline import Pipeline
 
 __version__ = "0.0.1"
 

@@ -6,8 +6,8 @@ import math
 from types import SimpleNamespace
 from typing import NamedTuple, TypedDict
 
-import bumble
-from bumble.utils import pipeline, standard_codecs
+import bumble_bencoding
+from bumble_bencoding.utils import pipeline, standard_codecs
 
 # Colors for test result output
 colours = {
@@ -165,7 +165,7 @@ def _test(msg, encoder, decoder, **kwargs):
 
 
 def test_encode_decode(**kwargs):
-    _test("Running encoding/decoding tests", bumble.encode, bumble.decode, **kwargs)
+    _test("Running encoding/decoding tests", bumble_bencoding.encode, bumble_bencoding.decode, **kwargs)
 
 
 def test_pipeline():
@@ -176,8 +176,6 @@ def test_pipeline():
 def test_pipeline_of(codec):
     pipeline_ = pipeline.Pipeline.of(codec)
     _test(f"Running encoding/decoding tests with pipeline of {codec}", pipeline_.encode, pipeline_.decode)
-
-
 
 
 def main():

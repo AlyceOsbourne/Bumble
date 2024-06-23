@@ -8,7 +8,7 @@ import lzma
 import zlib
 from enum import Enum
 
-from bumble.utils.abstract_codec import Codec
+from bumble_bencoding.utils.abstract_codec import Codec
 
 
 def hash_encode(data: bytes, algo):

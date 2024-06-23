@@ -2,7 +2,7 @@
 pipelines."""
 import dataclasses
 
-import bumble
+import bumble_bencoding
 from .abstract_codec import Codec
 from .standard_codecs import Codecs
 import functools
@@ -31,7 +31,7 @@ class Pipeline:
         Returns:
            bytes: The encoded data.
         """
-        return self.codec.encode(bumble.encode(data))
+        return self.codec.encode(bumble_bencoding.encode(data))
 
     def decode[T](self, data: bytes) -> T:
         """
@@ -43,7 +43,7 @@ class Pipeline:
         Returns:
            T: The decoded data.
         """
-        return bumble.decode(self.codec.decode(data))
+        return bumble_bencoding.decode(self.codec.decode(data))
 
     @classmethod
     def of(cls, *item) -> 'Pipeline':
@@ -57,7 +57,7 @@ class Pipeline:
            Pipeline: A new Pipeline instance.
         """
         return cls(functools.reduce(operator.or_, [
-            bumble.utils.standard_codecs.Codecs[codec.upper()] if isinstance(codec, str) else codec
+            bumble_bencoding.utils.standard_codecs.Codecs[codec.upper()] if isinstance(codec, str) else codec
             for codec
             in item
         ])) if item else cls()
@@ -69,7 +69,7 @@ class Pipeline:
         if isinstance(other, Pipeline):
             other = other.codec
         elif isinstance(other, str):
-            other = bumble.utils.standard_codecs.Codecs[other.upper()]
+            other = bumble_bencoding.utils.standard_codecs.Codecs[other.upper()]
         return Pipeline(self.codec | other)
 
     def __repr__(self) -> str:

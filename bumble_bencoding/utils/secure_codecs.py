@@ -7,7 +7,7 @@ from typing import AnyStr
 
 from cryptography.fernet import Fernet
 
-from bumble.utils.abstract_codec import Codec
+from bumble_bencoding.utils.abstract_codec import Codec
 
 
 def fernet_codec(key: AnyStr) -> Codec:

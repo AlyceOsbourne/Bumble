@@ -1,3 +1,5 @@
+![logo.png](logo.png)
+
 Not as bug-filled as the title might suggest, Bumble is a superset of bencoding (pronounced Bee Encoding) that aims to be a safer, simpler alternative to Pickle. Often when pickling objects, we only care about the types and data contained, not about recreating the same objects with the same IDs. This is where many of the unsafe aspects of Pickle come from. Bumble solves this by allowing the encoding of your data without needing to encode everything about the environment or objects like code objects.
 
 ## Why Bumble Rocks:
@@ -48,7 +50,7 @@ Here's how you can easily convert Python objects to Bumble encoding and back aga
 
 ```python
 from types import SimpleNamespace
-import bumble
+import bumble_bencoding
 
 data = {
     'key1': 'value1',
@@ -74,10 +76,10 @@ data = {
     'key22': [1, "string", 3.14, True, None, b"bytes", [1, 2], {"key": "value"}],
 }
 
-encoded_data = bumble.encode(data)
+encoded_data = bumble_bencoding.encode(data)
 print("Encoded Data:", encoded_data)
 
-decoded_data = bumble.decode(encoded_data)
+decoded_data = bumble_bencoding.decode(encoded_data)
 print("Decoded Data:", decoded_data)
 
 assert data == decoded_data, "Data does not match"
