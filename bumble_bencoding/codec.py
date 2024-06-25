@@ -4,11 +4,9 @@ import decimal
 import enum
 import importlib
 import math
+import types
 from collections import namedtuple
 from typing import Any
-
-from .constants import MODULE_MAPPING, REVERSE_MODULE_MAPPING
-from .exceptions import BumbleDecodeException
 
 
 def _encode[T](data: T) -> bytes:
@@ -121,7 +119,6 @@ def _encode_array(data: array.array) -> bytes:
 def _encode_object(data: Any) -> bytes:
     """Encode arbitrary object."""
     import_path = f"{data.__class__.__module__}.{data.__class__.__qualname__}"
-    import_path = _encode_module_name(import_path)
     attributes = {}
     if hasattr(data, '__dict__'):
         attributes.update(data.__dict__)
@@ -132,18 +129,9 @@ def _encode_object(data: Any) -> bytes:
     return b"o" + _encode_unicode(import_path) + encoded_attributes
 
 
-def _encode_module_name(import_path):
-    for module_name, short_code in MODULE_MAPPING.items():
-        if import_path.startswith(module_name):
-            import_path = import_path.replace(module_name, short_code, 1)
-            break
-    return import_path
-
-
 def _encode_enum(data: enum.Enum) -> bytes:
     """Encode enum."""
     import_path = f"{data.__class__.__module__}.{data.__class__.__qualname__}"
-    import_path = _encode_module_name(import_path)
     return b"e" + _encode_unicode(import_path) + _encode_unicode(data.name)
 
 
@@ -261,7 +249,6 @@ def _decode_object(data: str, index: int) -> tuple[Any, int]:
     """Decode arbitrary object from string."""
     index += 1  # Skip the 'o' character
     import_path, index = _decode_unicode(data, index)
-    import_path = _decode_module_name(import_path)
     attributes, index = _decode_collection(data, index, 'd')
     module_name, class_name = import_path.rsplit('.', 1)
     module = importlib.import_module(module_name)
@@ -275,19 +262,10 @@ def _decode_object(data: str, index: int) -> tuple[Any, int]:
     return obj, index
 
 
-def _decode_module_name(import_path):
-    for short_code, module_name in REVERSE_MODULE_MAPPING.items():
-        if import_path.startswith(short_code):
-            import_path = import_path.replace(short_code, module_name, 1)
-            break
-    return import_path
-
-
 def _decode_enum(data: str, index: int) -> tuple[enum.Enum, int]:
     """Decode enum from string."""
     index += 1  # Skip the 'e' character
     import_path, index = _decode_unicode(data, index)
-    import_path = _decode_module_name(import_path)
     name, index = _decode_unicode(data, index)
     module_name, class_name = import_path.rsplit('.', 1)
     module = importlib.import_module(module_name)
@@ -322,3 +300,7 @@ def _finalize_collection(collection: list | dict | set | tuple, type_char: str) 
     if type_char == 't':
         return tuple(collection)
     return collection
+
+
+BumbleEncodeException = types.new_class('BumbleEncodeException', (Exception,))
+BumbleDecodeException = types.new_class('BumbleDecodeException', (Exception,))

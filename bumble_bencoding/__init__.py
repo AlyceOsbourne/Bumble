@@ -2,8 +2,7 @@
 .. include:: ../README.md
 """
 
-from bumble_bencoding.codec import _encode, _decode  # noqa
-from bumble_bencoding.codec.exceptions import BumbleDecodeException
+from bumble_bencoding.codec import _encode, _decode, BumbleDecodeException  # noqa
 from bumble_bencoding.utils.pipeline import Pipeline
 
 __version__ = "0.0.1"
