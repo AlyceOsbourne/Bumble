@@ -10,8 +10,7 @@ def encode[T](data: T, optimize=True) -> bytes: # noqa
         return data
     deflated = deflate_bytes(data)
     if (len(deflated) + 1) >= len(data):
-        # return data
-        pass
+        return data
     return b"?" + deflated
 
 
