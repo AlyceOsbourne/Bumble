@@ -20,6 +20,7 @@ class Pipeline:
     """
 
     codec: Codec = Codecs.NULL
+    optimize: bool = True
 
     def encode[T](self, data: T) -> bytes:
         """
@@ -31,7 +32,7 @@ class Pipeline:
         Returns:
            bytes: The encoded data.
         """
-        return self.codec.encode(bumble_bencoding.encode(data))
+        return self.codec.encode(bumble_bencoding.encode(data, optimize=self.optimize))
 
     def decode[T](self, data: bytes) -> T:
         """

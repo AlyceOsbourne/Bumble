@@ -5,7 +5,7 @@ import enum
 import importlib
 from collections import namedtuple
 from typing import Any
-
+import inspect
 from bumble_bencoding.codec.exceptions import BumbleDecodeException
 
 
@@ -20,6 +20,8 @@ def decode(data: bytes, index: int = 0) -> tuple[Any, int]:
 
     if data[index:index + 1].isdigit():
         return decode_bytes(data, index)
+    elif starts_with(b'y'):
+        return decode_type(data, index)
     elif starts_with(b'nt'):
         return decode_named_tuple(data, index)
     elif starts_with(b'+') or starts_with(b'-'):
@@ -175,6 +177,14 @@ def initialize_collection(type_char: bytes) -> list | dict | set | tuple:
             return ()
         case _:
             raise ValueError(f"Invalid collection type: {type_char}")
+
+
+def decode_type(data, index):
+    """Decode type."""
+    index += 1  # Skip the 'y' character
+    module, index = decode_unicode(data, index)
+    name, index = decode_unicode(data, index)
+    return getattr(importlib.import_module(module), name), index
 
 
 def finalize_collection(collection: list | dict | set | tuple, type_char: bytes) -> list | dict | set | tuple:

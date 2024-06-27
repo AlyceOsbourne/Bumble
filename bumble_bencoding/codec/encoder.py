@@ -10,6 +10,8 @@ from typing import Any
 def encode(data: Any) -> bytes:
     """Helper function for encoding Python object."""
     match data:
+        case type():
+            return encode_type(data)
         case enum.Enum():
             return encode_enum(data)
         case array.array():
@@ -137,6 +139,10 @@ def encode_enum(data: enum.Enum) -> bytes:
     import_path = f"{data.__class__.__module__}.{data.__class__.__qualname__}"
     return b"e" + encode_unicode(import_path) + encode_unicode(data.name)
 
+
+def encode_type(data: type) -> bytes:
+    """Encode type."""
+    return b"y" + encode_unicode(data.__module__) + encode_unicode(data.__qualname__)
 
 
 
